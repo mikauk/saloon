@@ -1,0 +1,33 @@
+// DM Environment file for Saloon.dme.
+// All manual changes should be made outside the BEGIN_ and END_ blocks.
+// New source code should be placed in .dm files: choose File/New --> Code File.
+
+// BEGIN_INTERNALS
+// END_INTERNALS
+
+// BEGIN_FILE_DIR
+#define FILE_DIR .
+#define FILE_DIR "client"
+#define FILE_DIR "global"
+#define FILE_DIR "interface"
+// END_FILE_DIR
+
+#define WORKING 0
+
+// BEGIN_PREFERENCES
+// END_PREFERENCES
+
+// BEGIN_INCLUDE
+#include "pastebin.dm"
+#include "Saloon.dm"
+#include "client\administrative.dm"
+#include "client\telnet.dm"
+#include "client\userlist.dm"
+#include "client\workings.dm"
+#include "global\world-related.dm"
+#include "interface\control_center.dm"
+#include "interface\verbs.dm"
+#include "interface\interface.dmf"
+// END_INCLUDE
+
+
