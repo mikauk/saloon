@@ -21,6 +21,8 @@ proc
 			if(ch >= 0x20)
 				. += ascii2text(ch)
 
+
+client/proc
 	messageParse(msg, quicklink, address)
 		var
 			StartChunk // Everything before the quicklink
@@ -69,9 +71,23 @@ proc
 		msg = messageParse(msg, "yt:", youtube)
 		return msg
 
+	validMessageCheck(msg)
+		if(src.IsMuted())
+			System_UserMessage(src, "You re currently muted.")
+			return 0
+		else if(length(msg) > LengthLimit)
+			System_UserMessage(src, "You've said too much, would you shut up?")
+			return 0
+		else if(!HasSustenance(msg))
+			return 0
+		else
+			return 1
+
+
 
 client/verb
 	MOTD()
+		set hidden = 1
 		src<<browse("[MessageHeader][MessageCSS][Message][MessageFooter]","window=moderation;size=400x460;can_resize=0")
 	Color()
 		set hidden = 1
@@ -90,31 +106,25 @@ client/verb
 		set
 			hidden = 1
 			name = ">"
-		if(IsMuted())
-			System_UserMessage(src, "You are currently muted.")
-			return 0
-		else
+		if(validMessageCheck(msg))
 			setStatus("Available")
-			if(HasSustenance(msg) && length(msg)<350)
-				msg = KillNewlines(msg)
-				for(var/client/C)
-					if(!C.IsTelnet() && C.Colors) C << "<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\] <font color='#[Name_Color]'>[src.name]</font></b>: <font color='#[Text_Color]'>[linkSearch(msg)]</font>"
-					else C <<"<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\] [src.name]</b>: [html_encode(msg)]"
+			msg = linkSearch(KillNewlines(msg))
+			var/list/clients = Available + Busy + Idle + Away
+			for(var/client/C in clients)
+				if(!C.IsTelnet() && C.Colors) C << "<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\] <font color='#[Name_Color]'>[src.name]</font></b>: <font color='#[Text_Color]'>[msg]</font>"
+				else C <<"<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\] [src.name]</b>: [msg]"
 
 	Emote(msg as text)
 		set
 			hidden = 1
 			name = "me"
-		if(IsMuted())
-			System_UserMessage(src, "You are currently muted.")
-			return 0
-		else
+		if(validMessageCheck(msg))
 			setStatus("Available")
-			if(HasSustenance(msg) && length(msg)<350)
-				msg = KillNewlines(msg)
-				for(var/client/C)
-					if(!C.IsTelnet() && C.Colors) C << "<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\]</b> <font color='#[Name_Color]'>*[src.name] [linkSearch(msg)]</font>"
-					else C <<"<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\]</b> *[src.name]</b> [html_encode(msg)]"
+			msg = linkSearch(KillNewlines(msg))
+			var/list/clients = Available + Busy + Idle + Away
+			for(var/client/C in clients)
+				if(!C.IsTelnet() && C.Colors) C << "<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\]</b> <font color='#[Name_Color]'>*[src.name] [msg]</font>"
+				else C <<"<b>\[</b>[time2text(world.timeofday,"hh:mm:ss")]<b>\]</b> *[src.name]</b> [msg]"
 
 
 client/Topic(href,href_list[])

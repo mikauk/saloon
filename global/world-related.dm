@@ -3,13 +3,14 @@
 /**************************************************************************************************/
 world/hub = "mikau.saloon"
 var
-	version = "v0.05x"
+	version = "v0.06"
 
 	/* Lists */
 	MuteList = list()
 	Banned = list()
 	Admins = list("mikau","divinetraveller","deadstarr","evanx","audeuro","sinfall","stephen001","superantx")
-	REBOOT = FALSE
+	Reboot = FALSE
+	RebootTimer = 60
 
 	list/Available = list()
 	list/Busy = list()
@@ -38,12 +39,13 @@ var
 <center>(It's not really a MOTD)</center>
 
 <div class="boxtitle">Quick Links!</div>
-<div class="boxinfo">(google: id: wiki: hub: members: bbash: bash: qdb: bp: ref:)</div>
+<div class="boxinfo">(google: id: wiki: hub: members: bbash: bash: qdb: bp: ref: youtube:)</div>
 </div>
 "}
 
 	Bot_Color = "#083C76"
 	ConversationTopic = "No topic"
+	LengthLimit = 350
 
 	/* Lists */
 	Pastebin/pastebin = new
@@ -119,7 +121,6 @@ world
 	New()
 		..()
 		if(!WORKING) LoadTheWorld()
-		if(params["topic"]) ConversationTopic = params["topic"]
 
 	Del()
 		if(!WORKING) SaveTheWorld()

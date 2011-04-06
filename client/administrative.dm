@@ -2,7 +2,7 @@
 /*                                    CHARTS                                                      */
 /**************************************************************************************************/
 
-client/proc
+client/verb
 	ChartList()
 		var
 			counter = 0
@@ -28,7 +28,7 @@ client/proc
 			"}
 		var/FullPage = "[ChartHeader][CSS][HTML][Footer]"
 		src<<browse(FullPage,"window=moderation;size=400x400;can_resize=0")
-
+client/proc
 	MakeIncident(name, Reason, Moderator, Punishment)
 		var/savefile/Chart = new("saves/chart.sav")
 		if(Chart["[ckey(name)]/Incident1/Name"]==ckey(name))
@@ -102,72 +102,8 @@ textarea{width: 100%; height: 100%;}
 				var user = "null";
 			}"}
 
-
-
 client/proc
-	AdminForm()
-		var/Javascript = {"
-			<script style="javascript">
-				function SetTopic() {
-						var topic = document.moderate.topic.value;
-						document.location = 'byond://?action=Topic;topic='+topic;
-					}
-				function SetMessage() {
-						var topic = document.moderate.message.value;
-						document.location = 'byond://?action=Message;message='+topic;
-					}
-			</script>
-			"}
-		var/Page = {"
-					<form name="moderate" method="get">
-					<table class="moderation">
-					<tr><th colspan="2">Moderation Forms</th></tr>
-					<tr><th><a href="byond://?action=AdminPage;page=Mute;">Mute</a></th><th><a href="byond://?action=AdminPage;page=Unmute;">Unmute</a></th></tr>
-					<tr><th><a href="byond://?action=AdminPage;page=Ban;">Ban</a></th><th><a href="byond://?action=AdminPage;page=Unban;">Unban</a></th></tr>
-					<tr><th><a href="byond://?action=AdminPage;page=Kick;">Kick</a></th><th><a href="byond://?action=AdminPage;page=Chart;">View the Charts</th></tr>
-					<tr><th><a href="byond://?action=AdminPage;page=reboot">REBOOT</th><th><a href="byond://?action=AdminPage;page=cancel">CANCEL</th></tr>
-					<tr><th colspan="2">Reboot Status: [REBOOT]</th></tr>
-					<tr><th colspan="2">Current Topic</th></tr>
-					<tr><td colspan="2"><textarea name="topic">[ConversationTopic]</textarea></td></tr>
-					<tr><td colspan="2" class="taller"><textarea name="message">[Message]</textarea></td></tr>
-					<tr><th><input type="button" value="Set Topic" onclick="SetTopic(this.form)" /></th><th><input type="button" value="Set Message" onclick="SetMessage(this.form)" /></th></tr>
-					</table>
-					</form>
-				"}
-		var/Full_Page = "[Header][Javascript][CSS][Page][Footer]"
-		src<<browse(Full_Page,"window=moderation;size=400x460;can_resize=0")
-
-	PunishForm(type)
-		var/Javascript = {"
-		var punishment = "[type]";
-		var reason = document.moderate.reason.value;
-		document.location = 'byond://?action=Moderate;goback=no;user='+user+';punishment='+punishment+';moderator=[src];reason='+reason;}</script>"}
-		var/Page = {"
-					<form name="moderate" method="get">
-					<table class="moderation">
-						<tr><th>[type]</th><th><a href="byond://?action=Moderate;goback=yes">Return</a></th></tr>
-						<tr><td class="select" colspan="2">
-						<select name="chatters" size="10" multiple="multiple">"}
-		if(type=="Unmute")
-			for(var/Target in MuteList)
-				Page+="<option>[Target]</option>"
-		else if(type=="Unban")
-			for(var/Target in Banned)
-				Page+="<option>[Target]</option>"
-		else
-			for(var/client/Target)
-				Page+="<option>[Target.key]</option>"
-		Page+={"</select></td></tr>
-						<tr><td colspan="2"><textarea name="reason" />Please give a reason.</textarea></td></tr>
-						<tr><td colspan="2"><center><input type="button" value="Submit" onclick="Moderate(this.form)" /></center></td></tr>
-					</table>
-					</form>"}
-		var/Full_Page = "[Header][Javastart][Javascript][CSS][Page][Footer]"
-		src<<browse(Full_Page,"window=moderation;size=400x400;can_resize=0")
-
-
-client/proc
-	Administrate(action, user)
+	Administrate(user, action, reason)
 		if(!(ckey in Admins)) return
 		if(action == "Mute")
 			if(user in MuteList)
@@ -175,14 +111,7 @@ client/proc
 			else
 				System_WorldMessage("[user] has been muted.")
 				MuteList+=user
-
-		else if(action == "Kick")
-			for(var/client/C)
-				if(C.key == user)
-					System_WorldMessage("[user] has been kicked.")
-					del(C)
-					return 0
-			System_UserMessage(src,"We couldn't find anyone named [user].")
+				MakeIncident(user, reason, src.name, "Mute")
 
 		else if(action == "Ban")
 			if(user in Banned)
@@ -190,6 +119,7 @@ client/proc
 			else
 				System_WorldMessage("[user] has been banned.")
 				Banned+=user
+				MakeIncident(user, reason, src.name, "Ban")
 				for(var/client/C)
 					if(C.key == user)
 						del(C)
@@ -212,27 +142,6 @@ client/proc
 client/Topic(href,href_list[])
 	..()
 	switch(href_list["action"])
-		if("Moderate")
-			if(!(ckey in Admins)) return
-			if(href_list["user"]=="null"||href_list["punishment"]=="null") return
-			if(href_list["goback"]=="no")
-				Administrate(href_list["punishment"],href_list["user"])
-				MakeIncident(href_list["user"],href_list["reason"],href_list["moderator"],href_list["punishment"])
-				AdminForm()
-			if(href_list["goback"]=="yes") AdminForm(); return
-		if("Topic")
-			if(!(ckey in Admins)) return
-			if(href_list["topic"]!=ConversationTopic)
-				ConversationTopic = href_list["topic"]
-				for(var/client/M) {winset(M,"Main.Topic","text=\"[ConversationTopic]\"")}
-				System_WorldMessage("[src] has changed the topic.")
-
-		// semicolons break me =(
-		if("Message")
-			if(!(ckey in Admins)) return
-			if(href_list["message"]!=Message)
-				Message = href_list["message"]
-				System_WorldMessage("[src] has changed the login message. /MOTD to view it.")
 		if("AdminPage")
 			if(!(ckey in Admins)) return
 			if(href_list["page"]=="Chart")
@@ -243,24 +152,108 @@ client/Topic(href,href_list[])
 				return
 			if(href_list["page"]=="reboot")
 				src<<browse(null,"window=moderation")
-				System_WorldMessage("[src.key] has called for a reboot. Reboot scheduled for 2 minutes.")
-				REBOOT=TRUE
+				System_WorldMessage("[src.key] has called for a reboot. Reboot scheduled for 30 seconds.")
+				Reboot=TRUE
 				spawn(300)
-					if(REBOOT)
+					if(Reboot)
 						System_WorldMessage("REBOOT (byond://[world.internet_address]:[world.port])")
 						world.Reboot()
 				return
 			if(href_list["page"]=="cancel")
 				src<<browse(null,"window=moderation")
 				System_WorldMessage("[src.key] has canceled the reboot.")
-				REBOOT=FALSE
+				Reboot=FALSE
 				return
-			else
-				PunishForm(href_list["page"])
 
 
 client/Admin/verb
 	Admin()
 		set hidden = 1
-		if(!(ckey in Admins)) return
-		AdminForm()
+		if(!(ckey in Admins))
+			return
+		else
+			if(Reboot)
+				winset(src,"AdminSettings.admin_ServerStatus","text=\"Server will reboot in [RebootTimer] seconds.\"")
+				winset(src,"AdminSettings.admin_inputtime","text=0")
+			else
+				winset(src,"AdminSettings.admin_ServerStatus","text=\"Server is currently running.\"")
+				winset(src,"AdminSettings.admin_inputtime","text=[RebootTimer]")
+
+			winset(src,"AdminSettings.admin_charlimit","text=[LengthLimit]")
+			winset(src,"AdminSettings.admin_topic","text=\"[ConversationTopic]\"")
+			winset(src,"AdminActions.admin_reason","text=\"Spam\"")
+
+			winset(src,"AdminConsole","is-visible=true")
+
+	RebootButton()
+		set hidden = 1
+		if(!(ckey in Admins))
+			return
+		else
+			var/timer = text2num(winget(src,"AdminSettings.admin_inputtime","text"))
+			if(timer == 0)
+				Reboot = FALSE
+				System_WorldMessage("[src] has canceled the reboot.")
+			else
+				if(Reboot == TRUE)
+					RebootTimer = timer
+					System_WorldMessage("[src] has set the reboot timer to [RebootTimer] seconds.")
+				else
+					Reboot = TRUE
+					RebootTimer = timer
+					System_WorldMessage("[src] has called for a reboot in [RebootTimer] seconds.")
+					RebootWorld()
+
+	SetCharLimit()
+		set hidden = 1
+		if(!(ckey in Admins))
+			return
+		else
+			var/newlimit = text2num(winget(src,"AdminSettings.admin_charlimit","text"))
+			if(newlimit == LengthLimit) return
+			else
+				LengthLimit = newlimit
+				System_WorldMessage("[src] has set the character limit to [LengthLimit].")
+
+	SetTopic()
+		set hidden = 1
+		if(!(ckey in Admins))
+			return
+		else
+			var/newtopic = winget(src,"AdminSettings.admin_topic","text")
+			if(newtopic == ConversationTopic) return
+			else
+				ConversationTopic = newtopic
+				for(var/client/M) {winset(M,"Main.Topic","text=\"[ConversationTopic]\"")}
+				System_WorldMessage("[src] has changed the topic.")
+
+	Punish()
+		set hidden = 1
+		if(!(ckey in Admins))
+			return
+		else
+			var/target = winget(src,"AdminActions.admin_userinput","text")
+			var/reason = winget(src,"AdminActions.admin_reason","text")
+			if(!target)
+				return
+			else
+				if(winget(src,"AdminActions.admin_mute","is-checked"))
+					Administrate(target,"Mute", reason)
+				else if(winget(src,"AdminActions.admin_voice","is-checked"))
+					Administrate(target,"Unmute")
+				else if(winget(src,"AdminActions.admin_ban","is-checked"))
+					Administrate(target,"Ban", reason)
+				else if(winget(src,"AdminActions.admin_forgive","is-checked"))
+					Administrate(target,"Unban")
+				else return
+proc
+	RebootWorld()
+		while(RebootTimer>=0&&Reboot)
+			RebootTimer--
+			for(var/client/C)
+				if(C.ckey in Admins)
+					winset(C,"AdminSettings.admin_ServerStatus","text=\"Server will reboot in [RebootTimer] seconds.\"")
+			if(RebootTimer==0)
+				System_WorldMessage("REBOOT (byond://[world.internet_address]:[world.port])")
+				world.Reboot()
+			sleep(10)

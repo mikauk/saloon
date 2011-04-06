@@ -6,7 +6,7 @@ CommandParser
 		Parse(cmdString)
 	proc
 		Parse(cmdString)
-			if(!cmdString || !istext(cmdString) || !length(ckey(cmdString)) || text2ascii(cmdString, 1) == 32) return 0
+			if(!cmdString || !istext(cmdString) || !HasSustenance(cmdString)) return 0
 			var/length = length(cmdString)
 			var/cmdStr = ""
 			var/str = 0
@@ -14,7 +14,12 @@ CommandParser
 			for(var/i = 1; i <= length; i++)
 				var/ch = text2ascii(cmdString, i)
 				if(ch > 32)
-					if(ch == 34)
+					if(ch == 92) // Backslash
+						i ++
+						ch = text2ascii(cmdString, i)
+						cmdStr += ascii2text(ch)
+						continue
+					else if(ch == 34)
 						if(str)
 							if(!params) params = new
 							params += cmdStr
@@ -70,6 +75,8 @@ client/Command(cmd as command_text)
 	var/CommandParser/CP = new(cmd)
 	if(default_cmd && text2ascii(CP.Command(), 1) != 47) CP.PushCommand(default_cmd)
 	switch(lowertext(ckeyEx(CP.Command())))
+		if("quit", "exit")
+			del src
 		if("default")
 			if(!CP.ArgCount())
 				if(default_cmd) System_UserMessage(src, "Your default command is currently [default_cmd].")
@@ -87,7 +94,10 @@ client/Command(cmd as command_text)
 					default_cmd = auth[2]
 					name = "@[auth[1]]"
 					mob.name = name
-					System_UserMessage(src, "You have successfully authenticated as [auth[1]] and your default command is now [auth[2]]")
+					if(default_cmd && length(default_cmd))
+						System_UserMessage(src, "You have successfully authenticated as [name] and your default command is now [default_cmd]")
+					else
+						System_UserMessage(src, "You have successfully authenticated as [name].")
 		if("color")
 			src.Color()
 		if("say")

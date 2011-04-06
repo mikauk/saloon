@@ -5,7 +5,7 @@
 client/var
 
 	// Reloads the page to where the digital station resides
-	RadioTopReload ={"
+	RedirectTop ={"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -13,7 +13,7 @@ client/var
 <head>
 	<title>Radio</title>
 	<meta http-equiv="refresh" content="1;url="}
-	RadioBottomReload = {"" />
+	RedirectBottom = {"" />
 </head>
 <body>
 <p>Now loading...</p>
@@ -21,7 +21,7 @@ client/var
 </html>"}
 
 	// Embeds the players in the browser because IE is retarded
-	RadioTopEmbed ={"
+	EmbedTop ={"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
                       "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -29,10 +29,9 @@ client/var
 <head>
 	<title>Radio</title>
 	</head>
-<body><div style="width:500px; padding: 10px; border: 2px groove #000; text-align: center; margin: 0px auto;">"}
-	RadioEmbedMiddle = {"</div><div style="width: 100%; text-align: center"><embed width="100%" height="400px" src=""}
+<body><embed width="100%" height="100%" src=""}
 
-	RadioBottomEmbed = {" /></div></body></html>"}
+	EmbedBottom = {"" /></div></body></html>"}
 
 
 
@@ -40,11 +39,22 @@ client/var
 	// Stations
 	Q107 = "http://corusmedia.media.streamtheworld.com/player/Player.htm?id=cilqfm&city=Toronto&bdskey=4831&url=http://www.q107.com&platform=EMMISFM&active=true"
 
-	BuzzText = "This is an Alternate Rock station on The Buzz.<br />It has a real player, but it uses Silverlight.<br />So Internet Explorer is too stupid to play it without embedding."
-	BuzzStation = {"http://www.181.fm/asx.php?station=181-buzz""}
+	Buzz = {"http://www.181.fm/asx.php?station=181-buzz"}
 
+	CBTest="http://www.bbc.co.uk/iplayer/console/bbc_1xtra"
+
+client/proc
+	LoadStation(station, type, width, height)
+		if(type==1)
+			src<<browse("[RedirectTop][station][RedirectBottom]","window=radio;size=[width]x[height],can-resize=0")
+		else
+			src<<browse("[EmbedTop][station][EmbedBottom]","window=radio;size=[width]x[height],can-resize=0")
 
 client/verb
-	Q107() src<<browse("[RadioTopReload][Q107][RadioBottomReload]","window=main;size=795x547;can_resize=0")
+	Q107()
+		set hidden = 1
+		LoadStation(Q107, 1, 795, 547)
 
-	Buzz() src<<browse("[RadioTopEmbed][BuzzText][RadioEmbedMiddle][BuzzStation][RadioBottomEmbed]","window=main;size=795x547;can_resize=0")
+	Buzz()
+		set hidden = 1
+		LoadStation(Buzz, 2, 300, 180)

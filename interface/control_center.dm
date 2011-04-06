@@ -1,24 +1,40 @@
+proc
+	StripNonHex(X)
+		if(!istext(X)) return X
+		var
+			len = length(X)
+		. = ""
+		for(var/i = 1; i <= len; i++)
+			var/ch = text2ascii(X, i)
+			if((ch >= 0x30 && ch <= 0x39) || (ch >= 0x41 && ch <= 0x46) || (ch >= 0x61 && ch <= 0x66))
+				. += ascii2text(ch)
+			else
+				return
 client
 	proc
 		LoadInterface()
 			winset(src,"Main","size=690x450")
 
-			if(!src.Colors)winset(src,"ControlCenter.togglecolors_off","is-checked=true")
+			if(!src.Colors)winset(src,"ChatSettings.togglecolors_off","is-checked=true")
 
 			if(src.WhoSide)
 				src.AdjustWholist(1)
-				winset(src,"ControlCenter.userlist_right","is-checked=true")
+				winset(src,"ChatSettings.userlist_right","is-checked=true")
 			else
 				src.AdjustWholist()
 				winset(src,"Main.MainChild","splitter=20")
 
-			winset(src,"ControlCenter.input_outputstyle","text=\"[src.Output_Style]\"")
+			winset(src,"ChatSettings.input_outputstyle","text=\"[src.Output_Style]\"")
 			winset(src,"Output.Output","style=\"body{font-family:[src.Output_Style]}")
 
-			winset(src,"ControlCenter.input_namecolor","text=\"[src.Name_Color]\";text-color=#[src.Name_Color]")
+			winset(src,"ChatSettings.input_namecolor","text=\"[src.Name_Color]\";text-color=#[src.Name_Color]")
 
-			winset(src,"ControlCenter.input_textcolor","text=\"[src.Text_Color]\";text-color=#[src.Text_Color]")
+			winset(src,"ChatSettings.input_textcolor","text=\"[src.Text_Color]\";text-color=#[src.Text_Color]")
 
+			winset(src,"ChatSettings.input_status","text=\"I have gone away.\"")
+
+			winset(src,"TelnetSettings.input_telnetpassword","text=\"[TelnetPass(src)]\"")
+			winset(src,"TelnetSettings.input_dtc","text=\"[TelnetCmd(src)]\"")
 
 		SaveSetting(setting)
 			var/savefile/F = new("Chatters/[src].sav")
@@ -43,20 +59,21 @@ client
 
 	verb
 		LoadCenter()
+			set hidden = 1
 			if(winget(src,"ControlCenter","is-visible")=="true")
 				winset(src,"ControlCenter","is-visible=false")
 			else winset(src,"ControlCenter","is-visible=true")
 
 		setColors()
 			set hidden = 1
-			var/flag = winget(src,"ControlCenter.togglecolors_on","is-checked")
+			var/flag = winget(src,"ChatSettings.togglecolors_on","is-checked")
 			if(flag == "true")src.Colors = 1
 			else src.Colors = 0
 			if(!WORKING) SaveSetting(1)
 
 		setWhoSide()
 			set hidden = 1
-			var/flag = winget(src,"ControlCenter.userlist_left","is-checked")
+			var/flag = winget(src,"ChatSettings.userlist_left","is-checked")
 			if(flag == "true")
 				src.WhoSide = 0
 				src.AdjustWholist()
@@ -67,52 +84,60 @@ client
 
 		SetTelnetPass(var/pass as text)
 			set hidden = 1
-			winset(src,"ControlCenter.input_telnetpassword","text=\"[pass]\"")
-			var/cmd = winget(src,"ControlCenter.input_dtc","text")
-			if(istext(pass) && istext(cmd))
-				if(!TelnetInfo) TelnetInfo = new
-				TelnetInfo[src.ckey] = list("pwd" = pass, "cmd" = cmd, "uname" = src.key)
+			winset(src,"TelnetSettings.input_telnetpassword","text=\"[pass]\"")
+			var/cmd = winget(src,"ChatSettings.input_dtc","text")
+			SetTelnetInfo(src, pass, cmd)
 
 		SetTelnetCMD(var/cmd as text)
 			set hidden = 1
-			winset(src,"ControlCenter.input_dtc","text=\"[cmd]\"")
-			var/pass = winget(src,"ControlCenter.input_telnetpassword","text")
-			if(istext(pass) && istext(cmd))
-				if(!TelnetInfo) TelnetInfo = new
-				TelnetInfo[src.ckey] = list("pwd" = pass, "cmd" = cmd, "uname" = src.key)
-
+			winset(src,"TelnetSettings.input_dtc","text=\"[cmd]\"")
+			var/pass = winget(src,"ChatSettings.input_telnetpassword","text")
+			SetTelnetInfo(src, pass, cmd)
 
 		setOutput(var/style as text|null)
 			set hidden = 1
-			if(isnull(style))winset(src,"ControlCenter.input_outputstyle","text=\"[src.Output_Style]\"")
+			if(isnull(style))
+				winset(src,"ChatSettings.input_outputstyle","text=\"[src.Output_Style]\"")
 			else
 				src.Output_Style = style
-				winset(src,"ControlCenter.input_outputstyle","text=\"[src.Output_Style]\"")
+				winset(src,"ChatSettings.input_outputstyle","text=\"[src.Output_Style]\"")
 				winset(src,"Output.Output","style=\"body{font-family:[style]}")
 				if(!WORKING) SaveSetting(5)
 
 		setNameColor(var/color as text|null)
 			set hidden = 1
-			if(isnull(color))winset(src,"ControlCenter.input_namecolor","text=\"[src.Name_Color]\";text-color=#[src.Name_Color]")
+			if(isnull(color))winset(src,"ChatSettings.input_namecolor","text=\"[src.Name_Color]\";text-color=#[src.Name_Color]")
 			else
-				src.Name_Color = color
-				winset(src,"ControlCenter.input_namecolor","text=\"[src.Name_Color]\";text-color=#[src.Name_Color]")
+				src.Name_Color = StripNonHex(color)
+				winset(src,"ChatSettings.input_namecolor","text=\"[src.Name_Color]\";text-color=#[src.Name_Color]")
 				if(!WORKING) SaveSetting(6)
 
 		setTextColor(var/color as text|null)
 			set hidden = 1
-			if(isnull(color))winset(src,"ControlCenter.input_textcolor","text=\"[src.Text_Color]\";text-color=#[src.Text_Color]")
+			if(isnull(color))winset(src,"ChatSettings.input_textcolor","text=\"[src.Text_Color]\";text-color=#[src.Text_Color]")
 			else
-				src.Text_Color = color
-				winset(src,"ControlCenter.input_textcolor","text=\"[src.Text_Color]\";text-color=#[src.Text_Color]")
+				src.Text_Color = StripNonHex(color)
+				winset(src,"ChatSettings.input_textcolor","text=\"[src.Text_Color]\";text-color=#[src.Text_Color]")
 				if(!WORKING) SaveSetting(7)
 
 		setAvailable()
 			set hidden = 1
-			setStatus("Available")
+			var/status = winget(src,"ChatSettings.input_status","text")
+			if(length(status)>0)
+				setStatus("Available",status)
+			else
+				setStatus("Available")
 		setAway()
 			set hidden = 1
-			setStatus("Away")
+			var/status = winget(src,"ChatSettings.input_status","text")
+			if(length(status)>0)
+				setStatus("Away",status)
+			else
+				setStatus("Away")
 		setBusy()
 			set hidden = 1
-			setStatus("Busy")
+			var/status = winget(src,"ChatSettings.input_status","text")
+			if(length(status)>0)
+				setStatus("Busy",status)
+			else
+				setStatus("Busy")

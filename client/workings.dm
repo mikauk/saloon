@@ -62,6 +62,8 @@ client
 				F["[src]/Output"]>>src.Output_Style
 				F["[src]/Name"]>>src.Name_Color
 				F["[src]/Text"]>>src.Text_Color
+		IsMuted()
+			return (MuteList && (key in MuteList))
 
 	New()
 		if(!WORKING) src.LoadMe()
@@ -101,5 +103,3 @@ client
 		else
 			System_WorldMessage("[src.name] has logged out.")
 			..()
-
-	proc/IsMuted() return (MuteList && (key in MuteList))
