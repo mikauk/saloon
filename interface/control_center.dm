@@ -85,13 +85,13 @@ client
 		SetTelnetPass(var/pass as text)
 			set hidden = 1
 			winset(src,"TelnetSettings.input_telnetpassword","text=\"[pass]\"")
-			var/cmd = winget(src,"ChatSettings.input_dtc","text")
+			var/cmd = winget(src,"TelnetSettings.input_dtc","text")
 			SetTelnetInfo(src, pass, cmd)
 
 		SetTelnetCMD(var/cmd as text)
 			set hidden = 1
 			winset(src,"TelnetSettings.input_dtc","text=\"[cmd]\"")
-			var/pass = winget(src,"ChatSettings.input_telnetpassword","text")
+			var/pass = winget(src,"TelnetSettings.input_telnetpassword","text")
 			SetTelnetInfo(src, pass, cmd)
 
 		setOutput(var/style as text|null)
